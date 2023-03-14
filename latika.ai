@@ -1,0 +1,63 @@
+CODE FOR TODAY'S ASSIGNMENT: MANAN GOYAL BT20HCS036
+variables = {
+'A': [1, 2, 3],
+'B': [1, 2, 3],
+'C': [1, 2, 3]
+}
+constraints = [
+('A', 'B', lambda a, b: a != b),
+('B', 'C', lambda b, c: b != c),
+('A', 'C', lambda a, c: a < c)
+]
+def create_constraint_graph(variables, constraints):
+# Initialize an empty dictionary to store the graph
+graph = {}
+    # Add each variable as a node to the graph
+for variable in variables:
+    graph[variable] = set()
+
+# Add the constraints as edges to the graph
+for (var1, var2, constraint) in constraints:
+    graph[var1].add((var2, constraint))
+    graph[var2].add((var1, constraint))
+
+return graph
+constraint_graph = create_constraint_graph(variables, constraints)
+    def backtracking_with_cp(assignments):
+global variables, constraint_graph
+# If all variables are assigned, return the assignments
+if all(len(domain) == 1 for domain in assignments.values()):
+    return assignments
+
+# Choose the next variable to assign using the minimum remaining values (MRV) heuristic
+variable = min(variables, key=lambda var: len(assignments.get(var, variables[var])))
+
+# Iterate over the domain of the current variable and recurse
+for value in assignments.get(variable, variables[variable]):
+    # Check if the value satisfies the constraints with the previously assigned variables
+    if all(constraint(value, assignments[neighbor]) for neighbor, constraint in constraint_graph[variable] if neighbor in assignments):
+        # Create a copy of the assignments dictionary and assign the variable to the value
+        new_assignments = assignments.copy()
+        new_assignments[variable] = value
+        
+        # Apply constraint propagation to all adjacent variables
+        for neighbor, constraint in constraint_graph[variable]:
+            if neighbor not in new_assignments:
+                neighbor_domain = variables[neighbor]
+                for neighbor_value in neighbor_domain:
+                    if not any(constraint(value, neighbor_value) for value in assignments.get(variable, variables[variable])):
+                        variables[neighbor].remove(neighbor_value)
+                if not variables[neighbor]:
+                    return False
+        
+        # Recurse with the new assignments
+        result = backtracking_with_cp(new_assignments)
+        
+        # If the recursion was successful, return the assignments
+        if result is not False:
+            return result
+
+# If no value works, return False
+return False
+assignments = backtracking_with_cp({})
+print(assignments)
